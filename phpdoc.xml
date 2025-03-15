@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<phpdocumentor configVersion="3.0">
+    <paths>
+        <output>docs</output>
+        <cache>.phpdoc/cache</cache>
+    </paths>
+    <template name="vendor/automattic/phpdoc-markdown/data/templates/markdown" />
+    <version number="1.0.0-beta">
+        <api>
+           <source dsn=".">
+               <path>src</path>
+           </source>
+        </api>
+    </version>
+</phpdocumentor>
