@@ -7,7 +7,7 @@ abstract class Connection
     /**
      * @var string $dbname database name
      */
-    protected string $dbname;
+    protected string|null $dbname;
 
     /**
      * @var string $user user name
@@ -48,7 +48,7 @@ abstract class Connection
      * @param string $pass
      * @param int $port
      */
-    public function __construct(string $dbname, string $host, string $user, string $pass, int $port = 3306)
+    public function __construct(string|null $dbname, string $host, string $user, string $pass, int $port = 3306)
     {
         $this->dbname = $dbname;
         $this->host = $host;

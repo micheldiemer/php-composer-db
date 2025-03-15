@@ -38,8 +38,9 @@
         "@phpdoc-run",
         "@phpdoc-fix"
     ],
+    "gethome": "echo $(composer config home)",
     "phpdoc-run": "phpdoc -v",
-    "phpdoc-fix": "php ./vendor/automattic/phpdoc-markdown/bin/html-to-md.php",
+    "phpdoc-fix": "php $(composer config home)/vendor/automattic/phpdoc-markdown/bin/html-to-md.php",
     "test": "echo 'No tests yet'"
   }
 }
