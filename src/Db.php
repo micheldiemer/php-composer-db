@@ -45,8 +45,12 @@ class Db
             \call_user_func_array($callback, $args);
         } catch (\PDOException $e) {
             if ($this->dieOnError) {
-                \header('content-type: text/plain; charset=utf-8');
-                \ini_set('html_errors', 0);
+                if (!headers_sent()) {
+                    \header('Content-Type: text/plain; charset=utf-8');
+                    \ini_set('html_errors', 0);
+                } else {
+                    echo '<pre>' . PHP_EOL;
+                }
                 die('Erreur : ' . $e->getMessage());
             }
             throw $e;
@@ -92,6 +96,8 @@ class Db
     {
         $this->setDieOnError($dieOnError);
 
+        $this->c = $c;
+
         $this->catchPdoException([$this, 'connect']);
 
         $this->catchPdoException([$this, 'setSqlTables'], []);
@@ -126,7 +132,9 @@ class Db
     {
         $fk0 = "SET FOREIGN_KEY_CHECKS = 0;";
         $fk1 = "SET FOREIGN_KEY_CHECKS = 1;";
-        $this->pdo->exec("$fk0  DROP TABLE $sqlTable; $fk1");
+        $this->pdo->exec($fk0);
+        $this->pdo->exec("DROP TABLE $sqlTable;");
+        $this->pdo->exec($fk1);
         return $this;
     }
 
@@ -137,8 +145,8 @@ class Db
      */
     private function dropTables(): Db
     {
-        while ($sqlTable = array_pop($this->sqlTables) > 0) {
-            $this->dropTable($sqlTable);
+        while (count($this->sqlTables) > 0) {
+            $this->dropTable(array_pop($this->sqlTables));
         }
         return $this;
     }

@@ -68,7 +68,7 @@ abstract class Connection
     /**
      * Get an object connected to the server (without database)
      *
-     * @return \stdClass
+     * @return \PDO|\mysqli
      */
     abstract function getServer();
 
@@ -131,6 +131,7 @@ abstract class Connection
      */
     public function withDbName($dbname): Connection
     {
-        return new Connection($dbname, $this->host, $this->user, $this->pass, $this->port);
+        $class = get_class($this);
+        return new $class($dbname, $this->host, $this->user, $this->pass, $this->port);
     }
 }

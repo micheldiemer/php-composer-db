@@ -4,6 +4,7 @@ namespace Md\Db;
 
 use Md\Db\Connection\Connection;
 use Md\Db\Connection\MySQLiConnection;
+use Md\Db\Connection\PDOConnection;
 
 
 class DbServer
@@ -36,7 +37,11 @@ class DbServer
     public function __construct(Connection $c)
     {
         $this->c = $c;
-        $this->_pdo = $this->$c->getServer();
+        if ($c instanceof (__NAMESPACE__ . '/PDOConnection')):
+            throw new \InvalidArgumentException("PDOConnection expected");
+            return;
+        endif;
+        $this->_pdo = $this->c->getServer();
         $this->_pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
         $this->_pdo->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false);
     }
