@@ -115,6 +115,7 @@ class Db
         $sqlTables .= "FROM information_schema.tables ";
         $sqlTables .= " WHERE table_schema = " . $q;
         $stmt = $this->pdo->query($sqlTables);
+        $this->sqlTables = [];
         while ($table = $stmt->fetch(\PDO::FETCH_COLUMN)) {
             $this->sqlTables[] = $table;
         }
