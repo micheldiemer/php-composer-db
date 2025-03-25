@@ -24,8 +24,8 @@
     "install_tools": "phive install",
     "fix": "PHP_CS_FIXER_IGNORE_ENV=1 gphp-cs-fixer fix",
     "fixdry": "PHP_CS_FIXER_IGNORE_ENV=1 gphp-cs-fixer fix --dry-run --diff",
-    "lint": "gphplint",
-    "phpstan": "gphpstan",
+    "lint": "phplint",
+    "phpstan": "phpstan",
     "lint2": [
       "@lint",
       "@phpstan"
