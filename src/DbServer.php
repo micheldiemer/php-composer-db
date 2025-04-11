@@ -70,7 +70,7 @@ class DbServer
         foreach ($hosts as $host) {
             $qhost = $pdo->quote($host);
             if ($dropIfExists) {
-                $this->dropUser($newUser, $host);
+                $this->dropUser($newUser, [$host]);
             }
 
             $sql = "CREATE USER $exists $qnewUser@$qhost IDENTIFIED BY $qnewPass";
@@ -78,8 +78,8 @@ class DbServer
             $stmt->execute();
 
             foreach ($databases as $db) {
-                $qdb = $pdo->quote($db);
-                $pdo->exec("GRANT ALL PRIVILEGES ON $qdb.* TO $qnewUser@$qhost");
+                $qdb = $pdo->quote($db . '.*');
+                $pdo->exec("GRANT ALL PRIVILEGES ON {$db}.* TO {$qnewUser}@{$qhost}");
             }
         }
         $pdo->exec('FLUSH PRIVILEGES');
@@ -160,7 +160,7 @@ class DbServer
 
         $qdbname = $this->_pdo->quote($dbname);
         $this->_pdo->exec(
-            "CREATE DATABASE $exists $qdbname CHARACTER SET $charset COLLATE $collation"
+            "CREATE DATABASE {$exists} {$qdbname} CHARACTER SET {$charset} COLLATE {$collation}"
         );
 
         return new Db($this->c->withDbName($dbname));
@@ -220,6 +220,14 @@ class DbServer
         }
 
         $query = file_get_contents($sqlFile);
+	$r = mysqli_query($mysqli, "select database();");
+	if(mysqli_num_rows($r) > 0) {
+		$db = mysqli_fetch_column($r);
+		if($db != ''):
+		  $query = "use {$db};" . PHP_EOL . $query;
+		endif;
+	}
+	mysqli_free_result($r);
         foreach ($replacements as $replace => $keys) {
             foreach ($keys as $search) {
                 $query = mb_str_replace($search, $replace, $query);
@@ -253,7 +261,7 @@ class DbServer
      */
     public static function importSql(DbServer $server, Db|null $db, $sqlFile = __DIR__ . "/file.sql", $replacements = self::DEFAULT_MYSQL_TO_MARIADB_REPLACEMENTS)
     {
-        $importUser = 'importSql_'
+        $importUser = 'importsql_'
             . bin2hex(random_bytes(4))
             . substr(date_create()->format('Uv'), -3)
             . base_convert(random_int(37, 36 ** 2), 10, 36);
@@ -262,12 +270,14 @@ class DbServer
         $name = $db?->getName() ?? null;
         $dbs = $name ? [$name] : [];
 
-        $server->createUser($importUser, $importPass, true, [$server->c->getHost()], $dbs);
+	$host = gethostname();
+	$host = '%';
+        $server->createUser($importUser, $importPass, true, [$host], $dbs);
         $importConnection = new MySQLiConnection($name, $server->c->getHost(), $importUser, $importPass, $server->c->getPort());
 
-        $mysqli = $importConnection->getServer();
+        $mysqli = is_null($name) ? $importConnection->getServer() : $importConnection->getDb();
         self::doImport($mysqli, $sqlFile, $replacements);
-        $server->dropUser($importUser, [$server->c->getHost()]);
+        $server->dropUser($importUser, [$host]);
 
 
         return true;
