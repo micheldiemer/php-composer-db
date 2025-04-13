@@ -57,7 +57,7 @@ class DbServer
      * @param array $databases list of databases, defaults to []
      * @return $this
      */
-    public function createUser(string $newUser, string $newPass, $dropIfExists = false, array $hosts = ['localhost', '%'], array $databases = []): DbServer
+    public function createUser(string $newUser, string $newPass, $dropIfExists = false,  array $databases = [], array $hosts = ['localhost', '%']): DbServer
     {
         $pdo = $this->_pdo;
         if (!preg_match('/^[a-z0-9_]+$/', $newUser)):
@@ -68,7 +68,7 @@ class DbServer
         $exists = $dropIfExists ? 'IF NOT EXISTS' : '';
 
         foreach ($hosts as $host) {
-            $qhost = $pdo->quote($host);
+            $qhost = '`' . $host . '`';
             if ($dropIfExists) {
                 $this->dropUser($newUser, [$host]);
             }
@@ -126,9 +126,9 @@ class DbServer
         string $charCollation = 'utf8mb4_unicode_520_ci'
     ): Db {
         $db = $this->createDatabase($newDb, true, $charSet, $charCollation);
-        $this->createUser($newUser, $newPass, true, [$this->c->getHost()], [$newDb]);
+        $this->createUser($newUser, $newPass, true, [$newDb]);
 
-        $dbConnect = new Connection($newDb, $this->c->getHost(), $newUser, $newPass, $this->c->getPort());
+        $dbConnect = new PDOConnection($newDb, $this->c->getHost(), $newUser, $newPass, $this->c->getPort());
         return new Db($dbConnect);
     }
 
@@ -158,9 +158,10 @@ class DbServer
             $this->dropDatabase($dbname);
         }
 
-        $qdbname = $this->_pdo->quote($dbname);
+        $qdbname = '`' . $dbname . '`';
+	$sql = "CREATE DATABASE {$exists} {$qdbname} CHARACTER SET {$charset} COLLATE {$collation}";
         $this->_pdo->exec(
-            "CREATE DATABASE {$exists} {$qdbname} CHARACTER SET {$charset} COLLATE {$collation}"
+           $sql 
         );
 
         return new Db($this->c->withDbName($dbname));
@@ -171,7 +172,7 @@ class DbServer
      */
     public function createUserForDatabase(string $dbname, string $newUser, string $newPass)
     {
-        $this->createUser($newUser, $newPass, true, [$this->c->getHost()], [$dbname]);
+        $this->createUser($newUser, $newPass, true, [$dbname]);
     }
 
     /**
@@ -198,7 +199,7 @@ class DbServer
     public function createSecondRoot($secondRoot, $secondRootPass)
     {
         $pdo = $this->_pdo;
-        $this->createUser($secondRoot, $secondRootPass, true, [], []);
+        $this->createUser($secondRoot, $secondRootPass, true);
         $qUser = $pdo->quote($secondRoot);
         $qPass = $pdo->quote($secondRootPass);
         $pdo->exec("GRANT ALL PRIVILEGES ON *.* TO {$qUser}@{$qPass}");
@@ -270,9 +271,7 @@ class DbServer
         $name = $db?->getName() ?? null;
         $dbs = $name ? [$name] : [];
 
-	$host = gethostname();
-	$host = '%';
-        $server->createUser($importUser, $importPass, true, [$host], $dbs);
+        $server->createUser($importUser, $importPass, true, $dbs);
         $importConnection = new MySQLiConnection($name, $server->c->getHost(), $importUser, $importPass, $server->c->getPort());
 
         $mysqli = is_null($name) ? $importConnection->getServer() : $importConnection->getDb();
